@@ -1,5 +1,11 @@
+use std::str::Chars;
+
 fn main() {
-    println!("Hello, world!");
+    let input = String::from(
+        "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+    );
+
+    println!("{}", hex_to_base64(input));
 }
 
 fn bit_for_position(byte: &u8, position: &u8) -> u8 {
@@ -11,15 +17,18 @@ fn bit_for_position(byte: &u8, position: &u8) -> u8 {
 }
 
 fn hex_to_base64(input: String) -> String {
+    let hex = "0123456789abcdef".chars();
+
     let alphabet: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
         .chars()
         .collect();
 
     let mut input_as_bits = input
-        .bytes()
+        .chars()
         .into_iter()
+        .map(|c| hex.clone().into_iter().position(|r| r == c).unwrap() as u8)
         .map(|b| {
-            (0..8)
+            (0..4)
                 .into_iter()
                 .rev()
                 .map(move |c| bit_for_position(&b, &c))
@@ -50,24 +59,24 @@ mod test {
 
     #[test]
     fn no_padding() {
-        let input = String::from("Man");
-        let output = String::from("TWFu");
+        let input = String::from("aaaaaa");
+        let output = String::from("qqqq");
 
         assert_eq!(hex_to_base64(input), output);
     }
 
     #[test]
-    fn padding_input() {
-        let input = String::from("M");
-        let output = String::from("TQ==");
+    fn padding_one() {
+        let input = String::from("aa");
+        let output = String::from("qg==");
 
         assert_eq!(hex_to_base64(input), output);
     }
 
     #[test]
-    fn padding_output() {
-        let input = String::from("Ma");
-        let output = String::from("TWE=");
+    fn padding_two() {
+        let input = String::from("aaaa");
+        let output = String::from("qqo=");
 
         assert_eq!(hex_to_base64(input), output);
     }
