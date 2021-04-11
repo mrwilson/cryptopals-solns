@@ -1,14 +1,11 @@
 mod set1;
 
-use crate::set1::fixed_xor::*;
-use crate::set1::hex_to_base64::*;
+use crate::set1::single_byte_xor::*;
 
 fn main() {
-    println!(
-        "{}",
-        fixed_xor(
-            String::from("1c0111001f010100061a024b53535009181c"),
-            String::from("686974207468652062756c6c277320657965")
-        )
-    );
+    let input = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
+
+    for a in 0u8..127 {
+        println!("{}", single_byte_xor(a as char, input));
+    }
 }
