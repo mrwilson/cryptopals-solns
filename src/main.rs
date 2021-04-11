@@ -15,7 +15,7 @@ fn hex_to_base64(input: String) -> String {
         .chars()
         .collect();
 
-    return input
+    let mut input_as_bits = input
         .bytes()
         .into_iter()
         .map(|b| {
@@ -25,7 +25,13 @@ fn hex_to_base64(input: String) -> String {
                 .map(move |c| bit_for_position(&b, &c))
         })
         .flatten()
-        .collect::<Vec<u8>>()
+        .collect::<Vec<u8>>();
+
+    if input_as_bits.len() % 6 != 0 {
+        input_as_bits.extend(vec![0; 6 - (input_as_bits.len() % 6)]);
+    }
+
+    return input_as_bits
         .chunks(6)
         .map(|chunk| chunk.into_iter().fold(0, |acc, i| (acc << 1) + i) as usize)
         .map(|sextet| alphabet.get(sextet).unwrap())
@@ -40,6 +46,14 @@ mod test {
     fn no_padding() {
         let input = String::from("Man");
         let output = String::from("TWFu");
+
+        assert_eq!(hex_to_base64(input), output);
+    }
+
+    #[test]
+    fn padding_input() {
+        let input = String::from("M");
+        let output = String::from("TQ==");
 
         assert_eq!(hex_to_base64(input), output);
     }
