@@ -1,10 +1,6 @@
 pub fn fixed_xor(one: String, two: String) -> String {
     let alphabet: Vec<char> = "0123456789abcdef".chars().collect();
 
-    if one == two {
-        return String::from_utf8(vec![b'0'; one.len()]).unwrap();
-    }
-
     return one
         .chars()
         .into_iter()
