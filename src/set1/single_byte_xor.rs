@@ -4,14 +4,11 @@ use std::cmp::Ordering::Equal;
 use std::collections::HashMap;
 use std::iter::Map;
 
-pub fn single_byte_xor(key: char, text: &str) -> String {
-    return (0..text.len() / 2)
-        .map(|i| u8::from_str_radix(&text[2 * i..2 * i + 2], 16).unwrap())
-        .map(|i| (i ^ (key as u8)) as char)
-        .collect::<String>();
+pub fn single_byte_xor(key: u8, text: Vec<u8>) -> Vec<u8> {
+    return text.into_iter().map(|i| i ^ key).collect();
 }
 
-pub fn detect_single_byte_xor(text: &str) -> (String, u8, f32) {
+pub fn detect_single_byte_xor(text: Vec<u8>) -> (Vec<u8>, u8, f32) {
     let etaoin_shrdlu: HashMap<u8, f32> = [
         ('e', 0.124167f32),
         ('t', 0.0969225f32),
@@ -44,15 +41,15 @@ pub fn detect_single_byte_xor(text: &str) -> (String, u8, f32) {
     .map(|pair| (pair.0 as u8, pair.1))
     .collect();
 
-    let mut outputs: Vec<(String, u8, f32)> = (0u8..127)
+    let mut outputs: Vec<(Vec<u8>, u8, f32)> = (0u8..255)
         .into_iter()
         .map(|a| {
-            let sbx = single_byte_xor(a as char, text);
+            let sbx = single_byte_xor(a, text.clone());
 
             let mut counts: HashMap<u8, f32> = HashMap::new();
 
-            for char in sbx.chars() {
-                *counts.entry(char as u8).or_insert(0f32) += (1f32 / (text.len() as f32));
+            for char in sbx.clone() {
+                *counts.entry(char).or_insert(0f32) += (1f32 / (text.len() as f32));
             }
 
             (sbx, a, bhattacharya(counts, etaoin_shrdlu.clone()))

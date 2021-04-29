@@ -5,3 +5,4 @@ authors = ["Alex Wilson <gpg@probablyfine.co.uk>"]
 edition = "2018"
 
 [dependencies]
+base64 = "0.13.0"
