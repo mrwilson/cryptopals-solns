@@ -1,3 +1,4 @@
+pub mod bhattacharya;
 pub mod fixed_xor;
 pub mod hamming;
 pub mod hex_to_base64;
