@@ -58,6 +58,7 @@ pub fn detect_single_byte_xor(text: Vec<u8>) -> u8 {
     return outputs.last().unwrap().clone().0;
 }
 
+#[cfg(test)]
 mod test {
     use crate::set1::single_byte_xor::{detect_single_byte_xor, single_byte_xor};
 
