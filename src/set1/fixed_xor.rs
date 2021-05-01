@@ -1,43 +1,34 @@
-pub fn fixed_xor(one: String, two: String) -> String {
-    let alphabet: Vec<char> = "0123456789abcdef".chars().collect();
+use crate::set1::hex::hex_value;
 
+pub fn fixed_xor<T: AsRef<[u8]>>(one: T, two: T) -> Vec<u8> {
     return one
-        .chars()
-        .into_iter()
-        .zip(two.chars().into_iter())
-        .map(|pair| {
-            alphabet
-                .get(hex_value(&alphabet, pair.0) ^ hex_value(&alphabet, pair.1))
-                .unwrap()
-        })
-        .collect::<String>();
-}
-
-fn hex_value(alphabet: &Vec<char>, value: char) -> usize {
-    alphabet
-        .clone()
-        .into_iter()
-        .position(|x| x == value)
-        .unwrap()
+        .as_ref()
+        .iter()
+        .zip(two.as_ref().iter())
+        .map(|pair| (pair.0 ^ pair.1))
+        .collect();
 }
 
 #[cfg(test)]
 mod test {
     use super::fixed_xor;
+    use crate::set1::hex::hex_value;
 
     #[test]
-    fn identical_input_outputs_zero_string() {
-        let input = String::from("aaa");
-        let output = String::from("aaa");
+    fn identical_input_outputs_zero_vector() {
+        let input = hex_value("1c0111001f010100061a024b53535009181c");
 
-        assert_eq!(fixed_xor(input, output), "000");
+        assert_eq!(fixed_xor(&input, &input), vec![0; input.len()]);
     }
 
     #[test]
     fn example_input() {
-        let input = String::from("457");
-        let output = String::from("def");
-
-        assert_eq!(fixed_xor(input, output), "9b8");
+        assert_eq!(
+            fixed_xor(
+                hex_value("1c0111001f010100061a024b53535009181c"),
+                hex_value("686974207468652062756c6c277320657965")
+            ),
+            hex_value("746865206b696420646f6e277420706c6179")
+        );
     }
 }
