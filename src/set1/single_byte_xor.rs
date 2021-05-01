@@ -1,8 +1,6 @@
 use crate::set1::bhattacharya::bhattacharya;
-use crate::set1::fixed_xor::fixed_xor;
 use std::cmp::Ordering::Equal;
 use std::collections::HashMap;
-use std::iter::Map;
 
 pub fn single_byte_xor(key: u8, text: Vec<u8>) -> Vec<u8> {
     return text.into_iter().map(|i| i ^ key).collect();
@@ -49,7 +47,7 @@ pub fn detect_single_byte_xor(text: Vec<u8>) -> (Vec<u8>, u8, f32) {
             let mut counts: HashMap<u8, f32> = HashMap::new();
 
             for char in sbx.clone() {
-                *counts.entry(char).or_insert(0f32) += (1f32 / (text.len() as f32));
+                *counts.entry(char).or_insert(0f32) += 1f32 / (text.len() as f32);
             }
 
             (sbx, a, bhattacharya(counts, etaoin_shrdlu.clone()))

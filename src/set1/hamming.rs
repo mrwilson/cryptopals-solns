@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 pub fn hamming<T: AsRef<[u8]>>(one: T, two: T) -> u8 {
     return one
         .as_ref()

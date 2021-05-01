@@ -1,8 +1,7 @@
-use std::borrow::Borrow;
 use std::cmp::Ordering::Equal;
 
 use crate::set1::hamming::hamming;
-use crate::set1::single_byte_xor::{detect_single_byte_xor, single_byte_xor};
+use crate::set1::single_byte_xor::detect_single_byte_xor;
 
 pub fn repeating_key_xor(key: &str, text: &str) -> String {
     return text

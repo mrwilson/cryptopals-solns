@@ -1,5 +1,3 @@
-use crate::set1::hex::hex_value;
-
 pub fn fixed_xor<T: AsRef<[u8]>>(one: T, two: T) -> Vec<u8> {
     return one
         .as_ref()
