@@ -35,7 +35,7 @@ pub fn detect_repeating_key_xor(input: Vec<u8>) -> String {
 
     transposed
         .into_iter()
-        .map(|block| detect_single_byte_xor(block).1 as char)
+        .map(|block| detect_single_byte_xor(block) as char)
         .collect::<String>()
 }
 

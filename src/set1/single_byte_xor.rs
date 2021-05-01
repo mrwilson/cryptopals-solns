@@ -2,11 +2,11 @@ use crate::set1::bhattacharya::bhattacharya;
 use std::cmp::Ordering::Equal;
 use std::collections::HashMap;
 
-pub fn single_byte_xor(key: u8, text: Vec<u8>) -> Vec<u8> {
-    return text.into_iter().map(|i| i ^ key).collect();
+pub fn single_byte_xor<T: AsRef<[u8]>>(key: u8, text: T) -> Vec<u8> {
+    return text.as_ref().into_iter().map(|i| i ^ key).collect();
 }
 
-pub fn detect_single_byte_xor(text: Vec<u8>) -> (Vec<u8>, u8, f32) {
+pub fn detect_single_byte_xor(text: Vec<u8>) -> u8 {
     let etaoin_shrdlu: HashMap<u8, f32> = [
         ('e', 0.124167f32),
         ('t', 0.0969225f32),
@@ -56,5 +56,18 @@ pub fn detect_single_byte_xor(text: Vec<u8>) -> (Vec<u8>, u8, f32) {
 
     outputs.sort_by(|a, b| a.2.partial_cmp(&b.2).unwrap_or(Equal));
 
-    return outputs.last().unwrap().clone();
+    return outputs.last().unwrap().clone().1;
+}
+
+mod test {
+    use crate::set1::single_byte_xor::{detect_single_byte_xor, single_byte_xor};
+
+    #[test]
+    fn example_input() {
+        let key = 'A' as u8;
+
+        let input = single_byte_xor(key, "Once upon a time");
+
+        assert_eq!(detect_single_byte_xor(input), key);
+    }
 }
