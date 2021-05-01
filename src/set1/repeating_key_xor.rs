@@ -3,15 +3,13 @@ use std::cmp::Ordering::Equal;
 use crate::set1::hamming::hamming;
 use crate::set1::single_byte_xor::detect_single_byte_xor;
 
-pub fn repeating_key_xor(key: &str, text: &str) -> String {
+pub fn repeating_key_xor<T: AsRef<[u8]>>(key: T, text: T) -> Vec<u8> {
     return text
-        .as_bytes()
+        .as_ref()
         .iter()
-        .zip(key.as_bytes().iter().cycle().take(text.len()))
+        .zip(key.as_ref().iter().cycle())
         .map(|pair| (pair.0 ^ pair.1))
-        .map(|b| format!("{:02X}", b))
-        .collect::<String>()
-        .to_lowercase();
+        .collect();
 }
 
 pub fn detect_repeating_key_xor(input: Vec<u8>) -> String {
@@ -61,15 +59,18 @@ pub fn transpose(input: Vec<u8>, block_size: usize) -> Vec<Vec<u8>> {
 #[cfg(test)]
 mod test {
     use super::repeating_key_xor;
+    use crate::set1::hex::hex_value;
     use crate::set1::repeating_key_xor::detect_repeating_key_xor;
     use std::fs::File;
     use std::io::Read;
 
     #[test]
     fn no_padding() {
-        assert_eq!(
-            repeating_key_xor("ICE","Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"),
-            "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f");
+        let key = "ICE";
+        let text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
+
+        let expected_output = hex_value("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f");
+        assert_eq!(repeating_key_xor(key, text), expected_output);
     }
 
     #[test]
