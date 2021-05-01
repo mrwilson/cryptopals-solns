@@ -2,6 +2,7 @@ use std::cmp::Ordering::Equal;
 
 use crate::set1::hamming::hamming;
 use crate::set1::single_byte_xor::detect_single_byte_xor;
+use std::ops::Range;
 
 pub fn repeating_key_xor<T: AsRef<[u8]>>(key: T, text: T) -> Vec<u8> {
     return text
@@ -12,8 +13,8 @@ pub fn repeating_key_xor<T: AsRef<[u8]>>(key: T, text: T) -> Vec<u8> {
         .collect();
 }
 
-pub fn detect_repeating_key_xor<T: AsRef<[u8]>>(input: T) -> Vec<u8> {
-    let mut predicted_key_sizes: Vec<(usize, f32)> = (2..40)
+pub fn detect_repeating_key_xor<T: AsRef<[u8]>>(input: T, key_sizes: Range<usize>) -> Vec<u8> {
+    let mut predicted_key_sizes: Vec<(usize, f32)> = key_sizes
         .into_iter()
         .map(|size| (size, keysize_fitness(&input, size)))
         .collect();
@@ -67,6 +68,7 @@ mod test {
     use crate::set1::repeating_key_xor::detect_repeating_key_xor;
     use std::fs::File;
     use std::io::Read;
+    use std::str::from_utf8;
 
     #[test]
     fn no_padding() {
@@ -78,6 +80,29 @@ mod test {
     }
 
     #[test]
+    fn reversibility() {
+        let key = "Sugar Hill Gang";
+        let text = "Now what you hear is not a test I'm rappin' to the beat \
+And me, the groove, and my friends are gonna try to move your feet \
+See, I am Wonder Mike, and I'd like to say hello \
+To the black, to the white, the red \
+And the brown, the purple and yellow \
+But first I gotta bang bang the boogie to the boogie \
+Say up jump the boogie to the bang bang boogie \
+Let's rock, you don't stop \
+Rock the riddle that will make your body rock \
+Well, so far you've heard my voice, but I brought two friends along \
+And next on the mike is my man Hank, come on Hank, sing that song";
+
+        let ciphertext = repeating_key_xor(key, text);
+
+        let predicted_key = detect_repeating_key_xor(ciphertext, 10..20);
+
+        assert_eq!(predicted_key.as_slice(), key.as_bytes());
+    }
+
+    #[test]
+    #[ignore]
     fn break_repeating_key_xor() {
         let mut base64_encoded = String::new();
         let mut file = File::open("inputs/1_6.txt").unwrap();
@@ -86,7 +111,7 @@ mod test {
 
         assert_eq!(
             "Terminator X: Bring the noise".as_bytes().to_vec(),
-            detect_repeating_key_xor(base64::decode(&base64_encoded).unwrap())
+            detect_repeating_key_xor(base64::decode(&base64_encoded).unwrap(), 2..40)
         )
     }
 }
