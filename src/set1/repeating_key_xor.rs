@@ -12,33 +12,37 @@ pub fn repeating_key_xor<T: AsRef<[u8]>>(key: T, text: T) -> Vec<u8> {
         .collect();
 }
 
-pub fn detect_repeating_key_xor(input: Vec<u8>) -> String {
+pub fn detect_repeating_key_xor<T: AsRef<[u8]>>(input: T) -> Vec<u8> {
     let mut predicted_key_sizes: Vec<(usize, f32)> = (2..40)
         .into_iter()
-        .map(|size| {
-            let chunks: Vec<&[u8]> = input.chunks(size).take(4).collect();
-            let mut distance = 0f32;
-            for i in 0..4 {
-                for j in i..4 {
-                    distance += hamming(chunks[i].to_vec(), chunks[j].to_vec()) as f32;
-                }
-            }
-            (size, distance / size as f32)
-        })
+        .map(|size| (size, keysize_fitness(&input, size)))
         .collect();
 
     predicted_key_sizes.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Equal));
 
-    let transposed = transpose(input.clone(), predicted_key_sizes.first().unwrap().0);
-
-    transposed
+    transpose(&input, predicted_key_sizes.first().unwrap().0)
         .into_iter()
-        .map(|block| detect_single_byte_xor(block) as char)
-        .collect::<String>()
+        .map(|block| detect_single_byte_xor(block))
+        .collect()
 }
 
-pub fn transpose(input: Vec<u8>, block_size: usize) -> Vec<Vec<u8>> {
+fn keysize_fitness<T: AsRef<[u8]>>(input: &T, size: usize) -> f32 {
+    let chunks: Vec<&[u8]> = input.as_ref().chunks(size).take(4).collect();
+
+    let mut distance = 0u16;
+
+    for i in 0..4 {
+        for j in i..4 {
+            distance += hamming(chunks[i].to_vec(), chunks[j].to_vec()) as u16;
+        }
+    }
+
+    distance as f32 / size as f32
+}
+
+fn transpose<T: AsRef<[u8]>>(input: T, block_size: usize) -> Vec<Vec<u8>> {
     let blocks: Vec<Vec<u8>> = input
+        .as_ref()
         .chunks(block_size)
         .map(|block| block.to_vec())
         .collect();
@@ -81,7 +85,7 @@ mod test {
         base64_encoded = str::replace(&base64_encoded, "\n", "");
 
         assert_eq!(
-            String::from("Terminator X: Bring the noise"),
+            "Terminator X: Bring the noise".as_bytes().to_vec(),
             detect_repeating_key_xor(base64::decode(&base64_encoded).unwrap())
         )
     }
