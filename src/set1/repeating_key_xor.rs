@@ -75,7 +75,7 @@ mod test {
     #[test]
     fn break_repeating_key_xor() {
         let mut base64_encoded = String::new();
-        let mut file = File::open("6.txt").unwrap();
+        let mut file = File::open("inputs/1_6.txt").unwrap();
         file.read_to_string(&mut base64_encoded).unwrap();
         base64_encoded = str::replace(&base64_encoded, "\n", "");
 
