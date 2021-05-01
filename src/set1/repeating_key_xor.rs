@@ -68,7 +68,6 @@ mod test {
     use crate::set1::repeating_key_xor::detect_repeating_key_xor;
     use std::fs::File;
     use std::io::Read;
-    use std::str::from_utf8;
 
     #[test]
     fn no_padding() {
