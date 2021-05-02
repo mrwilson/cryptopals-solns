@@ -22,6 +22,7 @@ pub fn decrypt_aes_ecb<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, cipher_text: U) -
 mod test {
     use crate::set1::aes::decrypt_aes_ecb;
     use crate::set1::base64::from_base64;
+    use crate::set1::io::read_file;
     use std::fs::File;
     use std::io::Read;
     use std::str::from_utf8;
@@ -30,12 +31,12 @@ mod test {
     fn decrypt_test_file() {
         let key = "YELLOW SUBMARINE";
 
-        let mut base64_encoded = String::new();
-        let mut file = File::open("inputs/1_7.txt").unwrap();
-        file.read_to_string(&mut base64_encoded).unwrap();
-        base64_encoded = str::replace(&base64_encoded, "\n", "");
+        let input: Vec<u8> = read_file("inputs/1_7.txt")
+            .into_iter()
+            .filter(|c| *c != ('\n' as u8))
+            .collect();
 
-        let output = decrypt_aes_ecb(key, from_base64(base64_encoded));
+        let output = decrypt_aes_ecb(key, from_base64(input));
 
         let as_text = from_utf8(output.as_slice()).unwrap();
 

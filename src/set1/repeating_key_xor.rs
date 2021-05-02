@@ -66,6 +66,7 @@ mod test {
     use super::repeating_key_xor;
     use crate::set1::base64::from_base64;
     use crate::set1::hex::hex_value;
+    use crate::set1::io::read_file;
     use crate::set1::repeating_key_xor::detect_repeating_key_xor;
     use std::fs::File;
     use std::io::Read;
@@ -104,14 +105,14 @@ And next on the mike is my man Hank, come on Hank, sing that song";
     #[test]
     #[ignore]
     fn break_repeating_key_xor() {
-        let mut base64_encoded = String::new();
-        let mut file = File::open("inputs/1_6.txt").unwrap();
-        file.read_to_string(&mut base64_encoded).unwrap();
-        base64_encoded = str::replace(&base64_encoded, "\n", "");
+        let input: Vec<u8> = read_file("inputs/1_6.txt")
+            .into_iter()
+            .filter(|c| *c != ('\n' as u8))
+            .collect();
 
         assert_eq!(
             "Terminator X: Bring the noise".as_bytes().to_vec(),
-            detect_repeating_key_xor(from_base64(base64_encoded), 2..40)
+            detect_repeating_key_xor(from_base64(input), 2..40)
         )
     }
 }
