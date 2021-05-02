@@ -64,6 +64,7 @@ fn transpose<T: AsRef<[u8]>>(input: T, block_size: usize) -> Vec<Vec<u8>> {
 #[cfg(test)]
 mod test {
     use super::repeating_key_xor;
+    use crate::set1::base64::from_base64;
     use crate::set1::hex::hex_value;
     use crate::set1::repeating_key_xor::detect_repeating_key_xor;
     use std::fs::File;
@@ -110,7 +111,7 @@ And next on the mike is my man Hank, come on Hank, sing that song";
 
         assert_eq!(
             "Terminator X: Bring the noise".as_bytes().to_vec(),
-            detect_repeating_key_xor(base64::decode(&base64_encoded).unwrap(), 2..40)
+            detect_repeating_key_xor(from_base64(base64_encoded), 2..40)
         )
     }
 }
