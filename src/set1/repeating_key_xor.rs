@@ -68,8 +68,6 @@ mod test {
     use crate::set1::hex::hex_value;
     use crate::set1::io::read_file;
     use crate::set1::repeating_key_xor::detect_repeating_key_xor;
-    use std::fs::File;
-    use std::io::Read;
 
     #[test]
     fn no_padding() {

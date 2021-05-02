@@ -23,8 +23,6 @@ mod test {
     use crate::set1::aes::decrypt_aes_ecb;
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
-    use std::fs::File;
-    use std::io::Read;
     use std::str::from_utf8;
 
     #[test]
