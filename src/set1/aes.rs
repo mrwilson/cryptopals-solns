@@ -1,40 +1,42 @@
 extern crate openssl;
 
-use self::openssl::symm::{Cipher, Crypter, Mode};
+mod ecb {
+    use super::openssl::symm::{Cipher, Crypter, Mode};
 
-pub fn decrypt_aes_ecb<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, cipher_text: U) -> Vec<u8> {
-    let cipher = Cipher::aes_128_ecb();
+    pub fn decrypt<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, cipher_text: U) -> Vec<u8> {
+        let cipher = Cipher::aes_128_ecb();
 
-    let mut decrypter = Crypter::new(cipher, Mode::Decrypt, key.as_ref(), None).unwrap();
-    let mut result = vec![0; cipher_text.as_ref().len() + cipher.block_size()];
+        let mut decrypter = Crypter::new(cipher, Mode::Decrypt, key.as_ref(), None).unwrap();
+        let mut result = vec![0; cipher_text.as_ref().len() + cipher.block_size()];
 
-    let count = decrypter
-        .update(&cipher_text.as_ref(), &mut result)
-        .unwrap();
+        let count = decrypter
+            .update(&cipher_text.as_ref(), &mut result)
+            .unwrap();
 
-    let remaining = decrypter.finalize(&mut result[count..]).unwrap();
+        let remaining = decrypter.finalize(&mut result[count..]).unwrap();
 
-    result.truncate(count + remaining);
-    result
-}
+        result.truncate(count + remaining);
+        result
+    }
 
-pub fn encrypt_aes_ecb<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, plaintext: U) -> Vec<u8> {
-    let cipher = Cipher::aes_128_ecb();
+    pub fn encrypt<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, plaintext: U) -> Vec<u8> {
+        let cipher = Cipher::aes_128_ecb();
 
-    let mut encrypter = Crypter::new(cipher, Mode::Encrypt, key.as_ref(), None).unwrap();
-    let mut result = vec![0; plaintext.as_ref().len() + cipher.block_size()];
+        let mut encrypter = Crypter::new(cipher, Mode::Encrypt, key.as_ref(), None).unwrap();
+        let mut result = vec![0; plaintext.as_ref().len() + cipher.block_size()];
 
-    let count = encrypter.update(&plaintext.as_ref(), &mut result).unwrap();
-    let remaining = encrypter.finalize(&mut result[count..]).unwrap();
+        let count = encrypter.update(&plaintext.as_ref(), &mut result).unwrap();
+        let remaining = encrypter.finalize(&mut result[count..]).unwrap();
 
-    result.truncate(count + remaining);
+        result.truncate(count + remaining);
 
-    result
+        result
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::set1::aes::{decrypt_aes_ecb, encrypt_aes_ecb};
+    use crate::set1::aes;
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
     use std::str::from_utf8;
@@ -48,7 +50,7 @@ mod test {
             .filter(|c| *c != ('\n' as u8))
             .collect();
 
-        let output = decrypt_aes_ecb(key, from_base64(input));
+        let output = aes::ecb::decrypt(key, from_base64(input));
 
         let as_text = from_utf8(output.as_slice()).unwrap();
 
@@ -83,7 +85,7 @@ mod test {
         let key = "YELLOW SUBMARINE";
         let input = "Penny Lane, is in my ear, and in my eye.";
 
-        let output = decrypt_aes_ecb(key, encrypt_aes_ecb(key, &input));
+        let output = aes::ecb::decrypt(key, aes::ecb::encrypt(key, &input));
 
         assert_eq!(input.as_bytes(), output)
     }
