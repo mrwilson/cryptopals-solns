@@ -14,6 +14,27 @@ pub fn pad<T: AsRef<[u8]>>(input: T, block_size: usize) -> Vec<u8> {
     output
 }
 
+pub fn unpad<T: AsRef<[u8]>>(input: T) -> Option<Vec<u8>> {
+    let mut input_vec = input.as_ref().to_vec();
+    let mut counter = 0;
+
+    let last = input_vec[input_vec.len() - 1];
+
+    while let Some(byte) = input_vec.pop() {
+        if counter < last && byte != last {
+            return None;
+        }
+
+        counter += 1;
+
+        if counter >= last {
+            break;
+        }
+    }
+
+    Some(input_vec)
+}
+
 #[cfg(test)]
 mod test {
     use crate::set2::pkcs7;
@@ -54,5 +75,14 @@ mod test {
             }
             _ => panic!("Should have been able to pull last bytes"),
         }
+    }
+
+    #[test]
+    fn reversibility() {
+        let input = vec![0; 8];
+
+        let output = pkcs7::pad(&input, 5);
+
+        assert_eq!(pkcs7::unpad(output).unwrap(), input);
     }
 }
