@@ -13,9 +13,9 @@ mod ecb {
             .update(&cipher_text.as_ref(), &mut result)
             .unwrap();
 
-        if let Ok(remaining) = decrypter.finalize(&mut result[count..]) {
-            result.truncate(count + remaining);
-        }
+        let _ = decrypter.finalize(&mut result[count..]);
+
+        result.truncate(cipher_text.as_ref().len());
 
         result
     }
@@ -28,9 +28,9 @@ mod ecb {
 
         let count = encrypter.update(&plaintext.as_ref(), &mut result).unwrap();
 
-        if let Ok(remaining) = encrypter.finalize(&mut result[count..]) {
-            result.truncate(count + remaining);
-        }
+        let _ = encrypter.finalize(&mut result[count..]);
+
+        result.truncate(plaintext.as_ref().len());
 
         result
     }
@@ -39,13 +39,14 @@ mod ecb {
 mod cbc {
     use crate::set1::aes;
     use crate::set1::fixed_xor::fixed_xor;
+    use crate::set2::pkcs7;
 
     pub fn decrypt<T: AsRef<[u8]>, U: AsRef<[u8]>, V: AsRef<[u8]>>(
         key: T,
         cipher_text: U,
         iv: V,
     ) -> Vec<u8> {
-        let blocks: Vec<&[u8]> = cipher_text.as_ref().chunks(key.as_ref().len()).collect();
+        let blocks: Vec<&[u8]> = cipher_text.as_ref().chunks(16).collect();
 
         let mut previous_input: Vec<u8> = iv.as_ref().to_vec();
         let mut output = Vec::new();
@@ -61,6 +62,31 @@ mod cbc {
             previous_input = current_input;
         }
 
+        pkcs7::unpad(output).unwrap()
+    }
+
+    pub fn encrypt<T: AsRef<[u8]>, U: AsRef<[u8]>, V: AsRef<[u8]>>(
+        key: T,
+        plaintext: U,
+        iv: V,
+    ) -> Vec<u8> {
+        let padded_plaintext = pkcs7::pad(plaintext.as_ref(), 16);
+
+        let blocks: Vec<&[u8]> = padded_plaintext.chunks(16).collect();
+
+        let mut previous_input: Vec<u8> = iv.as_ref().to_vec();
+        let mut output = Vec::new();
+
+        for block in blocks {
+            let encrypted = aes::ecb::encrypt(
+                key.as_ref(),
+                fixed_xor(&previous_input, &block.clone().to_vec()),
+            );
+
+            output.extend(encrypted.clone());
+            previous_input = encrypted.clone();
+        }
+
         output
     }
 }
@@ -70,6 +96,7 @@ mod test {
     use crate::set1::aes;
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
+    use crate::set2::pkcs7;
     use std::str::from_utf8;
 
     #[test]
@@ -116,9 +143,9 @@ mod test {
         let key = "YELLOW SUBMARINE";
         let input = "Penny Lane, is in my ear, and in my eye.";
 
-        let output = aes::ecb::decrypt(key, aes::ecb::encrypt(key, &input));
+        let output = aes::ecb::decrypt(key, aes::ecb::encrypt(key, pkcs7::pad(&input, 16)));
 
-        assert_eq!(input.as_bytes(), output)
+        assert_eq!(input.as_bytes(), pkcs7::unpad(output).unwrap());
     }
 
     #[test]
@@ -136,5 +163,16 @@ mod test {
         let as_text = String::from_utf8(output).unwrap();
 
         assert!(as_text.starts_with("I'm back and I'm ringin' the bell"));
+    }
+
+    #[test]
+    fn reversibility_cbc() {
+        let key = "YELLOW SUBMARINE";
+        let input = "Penny Lane, is in my ear, and in my eye.";
+        let iv = b"\x00".repeat(key.len());
+
+        let output = aes::cbc::decrypt(key, aes::cbc::encrypt(key, &input, &iv), iv.clone());
+
+        assert_eq!(input.as_bytes(), output)
     }
 }
