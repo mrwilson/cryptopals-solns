@@ -1,4 +1,4 @@
-fn pad<T: AsRef<[u8]>>(input: T, block_size: usize) -> Vec<u8> {
+pub fn pad<T: AsRef<[u8]>>(input: T, block_size: usize) -> Vec<u8> {
     let input_size = input.as_ref().len();
 
     if input_size % block_size == 0 {
@@ -7,7 +7,7 @@ fn pad<T: AsRef<[u8]>>(input: T, block_size: usize) -> Vec<u8> {
 
     let mut output = input.as_ref().to_vec();
 
-    let padding = block_size - (input_size - block_size);
+    let padding = block_size - (input_size % block_size);
 
     output.extend(vec![padding as u8; padding]);
 

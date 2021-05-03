@@ -13,9 +13,10 @@ mod ecb {
             .update(&cipher_text.as_ref(), &mut result)
             .unwrap();
 
-        let remaining = decrypter.finalize(&mut result[count..]).unwrap();
+        if let Ok(remaining) = decrypter.finalize(&mut result[count..]) {
+            result.truncate(count + remaining);
+        }
 
-        result.truncate(count + remaining);
         result
     }
 
@@ -26,11 +27,41 @@ mod ecb {
         let mut result = vec![0; plaintext.as_ref().len() + cipher.block_size()];
 
         let count = encrypter.update(&plaintext.as_ref(), &mut result).unwrap();
-        let remaining = encrypter.finalize(&mut result[count..]).unwrap();
 
-        result.truncate(count + remaining);
+        if let Ok(remaining) = encrypter.finalize(&mut result[count..]) {
+            result.truncate(count + remaining);
+        }
 
         result
+    }
+}
+
+mod cbc {
+    use crate::set1::aes;
+    use crate::set1::fixed_xor::fixed_xor;
+
+    pub fn decrypt<T: AsRef<[u8]>, U: AsRef<[u8]>, V: AsRef<[u8]>>(
+        key: T,
+        cipher_text: U,
+        iv: V,
+    ) -> Vec<u8> {
+        let blocks: Vec<&[u8]> = cipher_text.as_ref().chunks(key.as_ref().len()).collect();
+
+        let mut previous_input: Vec<u8> = iv.as_ref().to_vec();
+        let mut output = Vec::new();
+
+        for block in blocks {
+            let current_input = block.clone().to_vec();
+
+            let decrypted = aes::ecb::decrypt(key.as_ref(), block);
+            let plaintext = fixed_xor(previous_input.clone(), decrypted.clone());
+
+            output.extend(plaintext.clone());
+
+            previous_input = current_input;
+        }
+
+        output
     }
 }
 
@@ -88,5 +119,22 @@ mod test {
         let output = aes::ecb::decrypt(key, aes::ecb::encrypt(key, &input));
 
         assert_eq!(input.as_bytes(), output)
+    }
+
+    #[test]
+    fn decrypt_cbc_test_file() {
+        let key = "YELLOW SUBMARINE";
+        let iv = b"\x00".repeat(key.len());
+
+        let input: Vec<u8> = read_file("inputs/2_2.txt")
+            .into_iter()
+            .filter(|c| *c != ('\n' as u8))
+            .collect();
+
+        let output = aes::cbc::decrypt(key, from_base64(input), iv);
+
+        let as_text = String::from_utf8(output).unwrap();
+
+        assert!(as_text.starts_with("I'm back and I'm ringin' the bell"));
     }
 }
