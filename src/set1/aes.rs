@@ -8,19 +8,33 @@ pub fn decrypt_aes_ecb<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, cipher_text: U) -
     let mut decrypter = Crypter::new(cipher, Mode::Decrypt, key.as_ref(), None).unwrap();
     let mut result = vec![0; cipher_text.as_ref().len() + cipher.block_size()];
 
-    decrypter
+    let count = decrypter
         .update(&cipher_text.as_ref(), &mut result)
         .unwrap();
 
-    let len = decrypter.finalize(&mut result).unwrap();
+    let remaining = decrypter.finalize(&mut result[count..]).unwrap();
 
-    result.drain(0..=len);
+    result.truncate(count + remaining);
+    result
+}
+
+pub fn encrypt_aes_ecb<T: AsRef<[u8]>, U: AsRef<[u8]>>(key: T, plaintext: U) -> Vec<u8> {
+    let cipher = Cipher::aes_128_ecb();
+
+    let mut encrypter = Crypter::new(cipher, Mode::Encrypt, key.as_ref(), None).unwrap();
+    let mut result = vec![0; plaintext.as_ref().len() + cipher.block_size()];
+
+    let count = encrypter.update(&plaintext.as_ref(), &mut result).unwrap();
+    let remaining = encrypter.finalize(&mut result[count..]).unwrap();
+
+    result.truncate(count + remaining);
+
     result
 }
 
 #[cfg(test)]
 mod test {
-    use crate::set1::aes::decrypt_aes_ecb;
+    use crate::set1::aes::{decrypt_aes_ecb, encrypt_aes_ecb};
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
     use std::str::from_utf8;
@@ -62,5 +76,15 @@ mod test {
                 );
             }
         }
+    }
+
+    #[test]
+    fn reversibility() {
+        let key = "YELLOW SUBMARINE";
+        let input = "Penny Lane, is in my ear, and in my eye.";
+
+        let output = decrypt_aes_ecb(key, encrypt_aes_ecb(key, &input));
+
+        assert_eq!(input.as_bytes(), output)
     }
 }
