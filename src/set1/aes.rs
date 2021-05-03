@@ -120,6 +120,7 @@ mod cbc {
 #[cfg(test)]
 mod test {
     use crate::set1::aes;
+    use crate::set1::aes::encryption_oracle;
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
     use crate::set2::pkcs7;
@@ -200,5 +201,25 @@ mod test {
         let output = aes::cbc::decrypt(key, aes::cbc::encrypt(key, &input, &iv), iv.clone());
 
         assert_eq!(input.as_bytes(), output)
+    }
+
+    #[test]
+    fn detect_oracle_choice() {
+        let input: Vec<u8> = "A".repeat(43).into_bytes();
+
+        for _ in 1..1000 {
+            let (using_cbc, output) = encryption_oracle(&input);
+
+            let mut blocks: Vec<&[u8]> = output.chunks(16).collect();
+
+            let total_blocks = blocks.len();
+
+            blocks.sort();
+            blocks.dedup();
+
+            let distinct_blocks = blocks.len();
+
+            assert_eq!(using_cbc, total_blocks == distinct_blocks)
+        }
     }
 }
