@@ -33,9 +33,9 @@ mod test {
 
     #[test]
     fn no_overlap_has_coefficient_zero() {
-        let input: HashMap<u8, f32> = [('a' as u8, 1f32)].iter().cloned().collect();
+        let input: HashMap<u8, f32> = [(b'a', 1f32)].iter().cloned().collect();
 
-        let other_input: HashMap<u8, f32> = [('b' as u8, 1f32)].iter().cloned().collect();
+        let other_input: HashMap<u8, f32> = [(b'b', 1f32)].iter().cloned().collect();
 
         assert_eq!(bhattacharya(input, other_input), 0.0);
     }

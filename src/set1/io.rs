@@ -35,7 +35,7 @@ mod test {
     fn example_1() {
         let input = "ab\ncd";
 
-        let output = split(input, '\n' as u8);
+        let output = split(input, b'\n');
 
         assert_eq!(output[0], "ab".as_bytes());
         assert_eq!(output[1], "cd".as_bytes());

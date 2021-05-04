@@ -23,16 +23,16 @@ pub fn to_base64<T: AsRef<[u8]>>(input: T) -> Vec<u8> {
                 0..=25 => sextet + 65,  // A - Z
                 26..=51 => sextet + 71, // a - z
                 52..=61 => sextet - 4,  // 0 - 9
-                62 => '+' as u8,
-                63 => '/' as u8,
-                64 => '=' as u8,
+                62 => b'+',
+                63 => b'/',
+                64 => b'=',
                 _ => 0,
             }
         })
         .collect();
 
     if output.len() % 4 != 0 {
-        output.extend(vec!['=' as u8; 4 - output.len() % 4]);
+        output.extend(vec![b'='; 4 - output.len() % 4]);
     }
 
     output
@@ -41,7 +41,7 @@ pub fn to_base64<T: AsRef<[u8]>>(input: T) -> Vec<u8> {
 pub fn from_base64<T: AsRef<[u8]>>(input: T) -> Vec<u8> {
     let mut bytes: Vec<u8> = input.as_ref().to_vec();
 
-    while *bytes.last().unwrap() == ('=' as u8) {
+    while *bytes.last().unwrap() == b'=' {
         bytes.pop();
     }
 

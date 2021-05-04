@@ -146,7 +146,7 @@ mod test {
 
         let input: Vec<u8> = read_file("inputs/1_7.txt")
             .into_iter()
-            .filter(|c| *c != ('\n' as u8))
+            .filter(|c| *c != b'\n')
             .collect();
 
         let output = aes::ecb::decrypt(key, from_base64(input));
@@ -158,7 +158,7 @@ mod test {
 
     #[test]
     fn find_aes_ecb_encrypted_entry() {
-        let input: Vec<Vec<u8>> = split(read_file("inputs/1_8.txt"), '\n' as u8);
+        let input: Vec<Vec<u8>> = split(read_file("inputs/1_8.txt"), b'\n');
 
         for ciphertext in input {
             let decoded = from_base64(ciphertext.clone());
@@ -187,7 +187,7 @@ mod test {
 
         let input: Vec<u8> = read_file("inputs/2_2.txt")
             .into_iter()
-            .filter(|c| *c != ('\n' as u8))
+            .filter(|c| *c != b'\n')
             .collect();
 
         let output = aes::cbc::decrypt(key, from_base64(input), iv);

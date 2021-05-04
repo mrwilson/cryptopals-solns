@@ -105,7 +105,7 @@ And next on the mike is my man Hank, come on Hank, sing that song";
     fn break_repeating_key_xor() {
         let input: Vec<u8> = read_file("inputs/1_6.txt")
             .into_iter()
-            .filter(|c| *c != ('\n' as u8))
+            .filter(|c| *c != b'\n')
             .collect();
 
         assert_eq!(

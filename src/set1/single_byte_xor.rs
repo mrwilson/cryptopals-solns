@@ -64,7 +64,7 @@ mod test {
 
     #[test]
     fn example_input() {
-        let key = 'A' as u8;
+        let key = b'A';
 
         let input = single_byte_xor(key, "Once upon a time");
 
