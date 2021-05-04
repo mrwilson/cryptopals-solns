@@ -1,10 +1,10 @@
-pub fn hamming<T: AsRef<[u8]>>(one: T, two: T) -> u8 {
+pub fn hamming<T: AsRef<[u8]>>(one: T, two: T) -> u32 {
     return one
         .as_ref()
         .iter()
         .zip(two.as_ref().iter())
         .map(|pair| (pair.0 ^ pair.1))
-        .map(|byte| u8::count_ones(byte) as u8)
+        .map(|byte| u8::count_ones(byte))
         .sum();
 }
 
