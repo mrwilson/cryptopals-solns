@@ -52,6 +52,7 @@ mod test {
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
     use crate::set2::pkcs7;
+    use std::collections::HashMap;
     use std::str::from_utf8;
 
     #[test]
@@ -92,5 +93,75 @@ mod test {
         let output = aes::ecb::decrypt(key, aes::ecb::encrypt(key, pkcs7::pad(&input, 16)));
 
         assert_eq!(input.as_bytes(), pkcs7::unpad(output).unwrap());
+    }
+
+    #[test]
+    fn byte_by_byte_decryption() {
+        let key = [
+            162, 16, 247, 214, 196, 106, 167, 142, 100, 136, 17, 82, 127, 118, 107, 212,
+        ]
+        .to_vec();
+
+        let mut derived_text: Vec<u8> = vec![0; 16];
+
+        loop {
+            let lookup = create_lookup(&derived_text[derived_text.len() - 15..], &key);
+
+            let nudge = vec![0; 15 - (derived_text.len() % 16)];
+
+            let output = encrypt_with_unknown_string(nudge, &key);
+            let encryption: Vec<&[u8]> = output.chunks(16).collect();
+
+            let block = encryption
+                .get((derived_text.len() / 16) - 1)
+                .unwrap()
+                .to_vec();
+
+            if lookup.contains_key(&block) {
+                derived_text.push(*lookup.get(&block).unwrap());
+            } else {
+                derived_text = derived_text.drain(16..).into_iter().collect();
+                break;
+            }
+        }
+
+        let recovered_text = String::from_utf8(derived_text).unwrap();
+
+        assert_eq!(
+            "Rollin' in my 5.0\n\
+            With my rag-top down so my hair can blow\n\
+            The girlies on standby waving just to say hi\n\
+            Did you stop? No, I just drove by\n",
+            recovered_text
+        );
+
+        fn create_lookup(input: &[u8], key: &Vec<u8>) -> HashMap<Vec<u8>, u8> {
+            (0..=128u8)
+                .map(|i| {
+                    let mut block = input.clone().to_vec();
+                    block.push(i);
+                    (aes::ecb::encrypt(key, block), i)
+                })
+                .collect()
+        }
+
+        fn encrypt_with_unknown_string<T: AsRef<[u8]>>(input: T, key: &[u8]) -> Vec<u8> {
+            let prepend = from_base64(
+                "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIG\
+                Rvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGll\
+                cyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQ\
+                pEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK",
+            )
+            .clone();
+
+            let text: Vec<u8> = input
+                .as_ref()
+                .iter()
+                .chain(prepend.iter())
+                .cloned()
+                .collect();
+
+            aes::ecb::encrypt(key, &text)
+        }
     }
 }
