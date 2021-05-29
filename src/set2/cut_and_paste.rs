@@ -17,6 +17,7 @@ mod test {
 
     use crate::set1::aes;
     use crate::set2::cut_and_paste::profile_for;
+    use crate::set2::{kv, pkcs7};
 
     static KEY: [u8; 16] = [
         162, 16, 247, 214, 196, 106, 167, 142, 100, 136, 17, 82, 127, 118, 107, 212,
@@ -27,7 +28,7 @@ mod test {
     }
 
     fn decrypt<T: AsRef<[u8]>>(input: T) -> Vec<u8> {
-        aes::ecb::decrypt(&KEY, input)
+        pkcs7::unpad(aes::ecb::decrypt(&KEY, input)).unwrap()
     }
 
     #[test]
@@ -35,8 +36,14 @@ mod test {
         // Push "user" off the end so we can remove the block
         let input1 = oracle("a".repeat(13)).into_iter().take(2 * 16);
 
-        // Create ciphertext with a block that starts with "admin"
-        let input2 = oracle("aaaaaaaaaaadmin           ");
+        // Create ciphertext including a padded block that starts with "admin"
+        let email = b"a"
+            .repeat(10)
+            .into_iter()
+            .chain(pkcs7::pad("admin", 16))
+            .collect::<Vec<u8>>();
+
+        let input2 = oracle(email);
 
         // Stitch the blocks together
         let mut synthesised = Vec::new();
@@ -45,7 +52,7 @@ mod test {
 
         let output = String::from_utf8(decrypt(synthesised)).unwrap();
 
-        assert!(output.contains("&role=admin"));
+        assert_eq!(*kv::parse(&output).get("role").unwrap(), "admin");
     }
 
     #[test]
