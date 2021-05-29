@@ -1,4 +1,4 @@
-mod aes;
+pub mod aes;
 mod base64;
 pub mod bhattacharya;
 pub mod fixed_xor;

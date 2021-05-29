@@ -1,3 +1,3 @@
 mod cbc;
-mod ecb;
+pub mod ecb;
 mod oracle;
