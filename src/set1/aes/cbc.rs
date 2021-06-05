@@ -56,6 +56,8 @@ mod test {
     use crate::set1::aes;
     use crate::set1::base64::from_base64;
     use crate::set1::io::read_file;
+    use crate::set2::pkcs7;
+    use crate::utils::random::random_bytes;
 
     #[test]
     fn decrypt_cbc_test_file() {
@@ -83,5 +85,48 @@ mod test {
         let output = aes::cbc::decrypt(key, aes::cbc::encrypt(key, &input, &iv), iv.clone());
 
         assert_eq!(input.as_bytes(), output)
+    }
+
+    #[test]
+    fn bit_flipping_attack() {
+        let key: Vec<u8> = random_bytes(16);
+        let iv: Vec<u8> = random_bytes(16);
+
+        fn encrypt_input<T: AsRef<[u8]>>(input: T, key: Vec<u8>, iv: Vec<u8>) -> Vec<u8> {
+            let before = "comment1=cooking%20MCs;userdata=";
+            let after = ";comment2=%20like%20a%20pound%20of%20bacon";
+
+            let combined_input: Vec<u8> = before
+                .as_bytes()
+                .to_vec()
+                .into_iter()
+                .chain(input.as_ref().to_vec())
+                .chain(after.as_bytes().to_vec())
+                .collect();
+
+            aes::cbc::encrypt(key, pkcs7::pad(combined_input, 16), iv)
+        }
+
+        fn decrypt<T: AsRef<[u8]>, U: AsRef<[u8]>>(cipher_text: T, key: U, iv: U) -> Vec<u8> {
+            aes::cbc::decrypt(key, cipher_text, iv)
+        }
+
+        let mut encrypted = encrypt_input("a".repeat(16), key.clone(), iv.clone());
+
+        ";comment2=%20lik"
+            .as_bytes()
+            .to_vec()
+            .into_iter()
+            .zip(";admin=true;c=li".as_bytes().to_vec())
+            .zip(32..=47)
+            .for_each(|((original_byte, desired_byte), index)| {
+                encrypted[index] ^= original_byte ^ desired_byte;
+            });
+
+        let decrypted_text = decrypt(encrypted, &key, &iv);
+
+        let output = String::from_utf8_lossy(decrypted_text.as_slice());
+
+        assert!(output.contains(";admin=true;"));
     }
 }
