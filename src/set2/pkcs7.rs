@@ -61,6 +61,14 @@ mod test {
     }
 
     #[test]
+    fn invalid_padding() {
+        let mut input = vec![0; 9];
+        input.push(2u8);
+
+        assert!(pkcs7::unpad(&input).is_none());
+    }
+
+    #[test]
     fn padding_with_two_bytes() {
         let input = vec![0; 8];
 
