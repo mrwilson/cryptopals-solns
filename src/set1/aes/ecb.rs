@@ -52,6 +52,7 @@ mod test {
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
     use crate::set2::pkcs7;
+    use rand::{thread_rng, Rng};
     use std::collections::HashMap;
     use std::str::from_utf8;
 
@@ -157,6 +158,134 @@ mod test {
             let text: Vec<u8> = input
                 .as_ref()
                 .iter()
+                .chain(prepend.iter())
+                .cloned()
+                .collect();
+
+            aes::ecb::encrypt(key, &text)
+        }
+    }
+
+    fn random_bytes(length: usize) -> Vec<u8> {
+        return (0..length).map(|_| thread_rng().gen::<u8>()).collect();
+    }
+
+    #[test]
+    fn byte_by_byte_decryption_2() {
+        let key = [
+            162, 16, 247, 214, 196, 106, 167, 142, 100, 136, 17, 82, 127, 118, 107, 212,
+        ]
+        .to_vec();
+
+        let random_starting_bytes: Vec<u8> = random_bytes(thread_rng().gen_range(1..100));
+
+        // Uh-oh! There's some random junk at the beginning of the ECB input
+
+        // We can discover its length by repeatedly padding with increasingly long strings of "a"
+        // until we get a duplicate block.
+
+        // This will tell us both the required length to pad out the block (as length % 16)
+        // and the length of the junk (by finding the indices of the repeated blocks)
+
+        // Then it's almost identical to the previous byte-by-byte but with some additional offset
+        // to ignore the preceding junk
+
+        let mut length_to_pad_out_block = 0;
+        let mut blocks_of_junk = 0;
+
+        for i in 32..=47 {
+            let output = encrypt_with_unknown_string_and_preceding_bytes(
+                &random_starting_bytes,
+                "a".repeat(i),
+                &key,
+            );
+
+            if aes::ecb::has_repeated_blocks(output.clone()) {
+                println!("Repeated blocks detected after padding with {0}", i);
+                length_to_pad_out_block = i % 16;
+
+                let chunks: Vec<&[u8]> = output.chunks(16).collect();
+
+                for i in 0..chunks.len() - 2 {
+                    if &chunks[i] == &chunks[i + 1] {
+                        println!("Repeated blocks found at ({0},{1})", i, i + 1);
+                        blocks_of_junk = i
+                    }
+                }
+
+                break;
+            }
+        }
+
+        let mut derived_text: Vec<u8> = vec![0; 16];
+
+        loop {
+            let lookup = create_lookup(&derived_text[derived_text.len() - 15..], &key);
+
+            println!("{:?}", &derived_text);
+
+            let input: Vec<u8> = vec![1u8; length_to_pad_out_block]
+                .iter()
+                .chain(vec![0u8; 15 - (derived_text.len() % 16)].iter())
+                .map(|x| *x)
+                .collect();
+
+            let output = encrypt_with_unknown_string_and_preceding_bytes(
+                &random_starting_bytes,
+                input,
+                &key,
+            );
+            let encryption: Vec<&[u8]> = output.chunks(16).collect();
+
+            let block = encryption
+                .get(blocks_of_junk + (derived_text.len() / 16) - 1)
+                .unwrap()
+                .to_vec();
+
+            if lookup.contains_key(&block) {
+                derived_text.push(*lookup.get(&block).unwrap());
+            } else {
+                derived_text = derived_text.drain(16..).into_iter().collect();
+                break;
+            }
+        }
+
+        let recovered_text = String::from_utf8(derived_text).unwrap();
+
+        assert_eq!(
+            "Rollin' in my 5.0\n\
+            With my rag-top down so my hair can blow\n\
+            The girlies on standby waving just to say hi\n\
+            Did you stop? No, I just drove by\n",
+            recovered_text
+        );
+
+        fn create_lookup(input: &[u8], key: &Vec<u8>) -> HashMap<Vec<u8>, u8> {
+            (0..=128u8)
+                .map(|i| {
+                    let mut block = input.clone().to_vec();
+                    block.push(i);
+                    (aes::ecb::encrypt(key, block), i)
+                })
+                .collect()
+        }
+
+        fn encrypt_with_unknown_string_and_preceding_bytes<T: AsRef<[u8]>>(
+            random_starting_bytes: &Vec<u8>,
+            input: T,
+            key: &[u8],
+        ) -> Vec<u8> {
+            let prepend = from_base64(
+                "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIG\
+            Rvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGll\
+            cyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQ\
+            pEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK",
+            )
+            .clone();
+
+            let text: Vec<u8> = random_starting_bytes
+                .iter()
+                .chain(input.as_ref().iter())
                 .chain(prepend.iter())
                 .cloned()
                 .collect();
