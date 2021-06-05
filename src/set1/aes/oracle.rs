@@ -1,20 +1,16 @@
 use crate::set1::aes;
-use rand::{thread_rng, Rng};
+use crate::utils::random::{coin_flip, random_bytes, random_in_range};
 
 pub fn encryption_oracle<T: AsRef<[u8]>>(input: T) -> (bool, Vec<u8>) {
-    fn random_bytes(length: usize) -> Vec<u8> {
-        return (0..length).map(|_| thread_rng().gen::<u8>()).collect();
-    };
-
     let key = random_bytes(16);
 
-    let padding_size: usize = thread_rng().gen_range(5..10);
+    let padding_size: usize = random_in_range(5, 10);
 
     let mut padded_input = random_bytes(padding_size);
     padded_input.extend(input.as_ref());
     padded_input.extend(random_bytes(padding_size));
 
-    let use_cbc: bool = thread_rng().gen();
+    let use_cbc = coin_flip();
 
     if use_cbc {
         let iv = random_bytes(16);

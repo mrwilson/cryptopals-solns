@@ -52,7 +52,7 @@ mod test {
     use crate::set1::base64::from_base64;
     use crate::set1::io::{read_file, split};
     use crate::set2::pkcs7;
-    use rand::{thread_rng, Rng};
+    use crate::utils::random::{random_bytes, random_in_range};
     use std::collections::HashMap;
     use std::str::from_utf8;
 
@@ -166,10 +166,6 @@ mod test {
         }
     }
 
-    fn random_bytes(length: usize) -> Vec<u8> {
-        return (0..length).map(|_| thread_rng().gen::<u8>()).collect();
-    }
-
     #[test]
     fn byte_by_byte_decryption_2() {
         let key = [
@@ -177,7 +173,7 @@ mod test {
         ]
         .to_vec();
 
-        let random_starting_bytes: Vec<u8> = random_bytes(thread_rng().gen_range(1..100));
+        let random_starting_bytes: Vec<u8> = random_bytes(random_in_range(0, 100));
 
         // Uh-oh! There's some random junk at the beginning of the ECB input
 
