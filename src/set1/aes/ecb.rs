@@ -98,10 +98,7 @@ mod test {
 
     #[test]
     fn byte_by_byte_decryption() {
-        let key = [
-            162, 16, 247, 214, 196, 106, 167, 142, 100, 136, 17, 82, 127, 118, 107, 212,
-        ]
-        .to_vec();
+        let key = random_bytes(16);
 
         let mut derived_text: Vec<u8> = vec![0; 16];
 
@@ -168,10 +165,7 @@ mod test {
 
     #[test]
     fn byte_by_byte_decryption_2() {
-        let key = [
-            162, 16, 247, 214, 196, 106, 167, 142, 100, 136, 17, 82, 127, 118, 107, 212,
-        ]
-        .to_vec();
+        let key = random_bytes(16);
 
         let random_starting_bytes: Vec<u8> = random_bytes(random_in_range(0, 100));
 
